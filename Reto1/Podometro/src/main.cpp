@@ -11,6 +11,18 @@
 Adafruit_MPU6050 mpu;
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
 
+const float threshold = 2.5; // Adjust this threshold for step detection sensitivity
+const int bufferLength = 15; // Number of accelerometer readings in the buffer
+float buffer[bufferLength];
+int bufferIndex = 0;
+int stepCount = 0;
+bool stepDetected = false;
+
+const unsigned long debounceDelay = 300; // Debounce delay in milliseconds
+unsigned long lastStepTime = 0;
+
+
+
 void setup() {
   Serial.begin(115200);
   // while (!Serial);
@@ -30,10 +42,15 @@ void setup() {
       ; // Don't proceed, loop forever
   }
   display.display();
-  delay(500); // Pause for 2 seconds
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setRotation(0);
+}
+void updateOledDisplay() {
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.print("# de pasos: ");
+  display.print(stepCount);
+  display.display();
 }
 
 void loop() {
@@ -42,23 +59,41 @@ void loop() {
 
   display.clearDisplay();
   display.setCursor(0, 0);
-
+/*
   display.println("Accelerometer - m/s^2");
   display.print(a.acceleration.x - 1, 1);
   display.print(", ");
   display.print(a.acceleration.y + 0.5, 1);
   display.print(", ");
   display.print(a.acceleration.z - 9.2, 1);
-  display.println("");
+  display.println("");*/
+  float accelerationMagnitude = sqrt((a.acceleration.x - 1) * (a.acceleration.x - 1) +
+                                     (a.acceleration.y + 0.5) * (a.acceleration.y + 0.5) +
+                                     (a.acceleration.z - 9.2) * (a.acceleration.z - 9.2));
 
-  display.println("Gyroscope - rps");
-  display.print(g.gyro.x, 1);
-  display.print(", ");
-  display.print(g.gyro.y, 1);
-  display.print(", ");
-  display.print(g.gyro.z, 1);
-  display.println("");
+  buffer[bufferIndex] = accelerationMagnitude;
+  bufferIndex = (bufferIndex + 1) % bufferLength;
 
-  display.display();
+  // Detect a step if the current magnitude is greater than the average of the buffer by the threshold
+  float avgMagnitude = 0;
+  for (int i = 0; i < bufferLength; i++) {
+    avgMagnitude += buffer[i];
+  }
+  avgMagnitude /= bufferLength;
+
+  unsigned long currentMillis = millis();
+
+  if (accelerationMagnitude > (avgMagnitude + threshold)) {
+    if (!stepDetected && (currentMillis - lastStepTime) > debounceDelay) {
+      stepCount++;
+      stepDetected = true;
+      lastStepTime = currentMillis;
+      updateOledDisplay();
+      
+    }
+  } else {
+    stepDetected = false;
+  }
+
   delay(100);
 }
