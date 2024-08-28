@@ -3,5 +3,5 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
-.ipynb_checkpoints
+/.ipynb_checkpoints
 .accelerometer walking data.ipynb
