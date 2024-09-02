@@ -44,7 +44,7 @@ void setup() {
   delay(500); // Pausa por 2 segundos
   display.setTextSize(2);
   display.setTextColor(WHITE);
-  display.setRotation(0);
+  display.setRotation(2);
 }
 
 void reset(){
@@ -78,8 +78,8 @@ void loop() {
     display.setCursor(49, 30);
   }
   display.println(pasos);
-  if(abs(a.acceleration.x + 0.4) >= 60){
-    reset(); // Si la aceleracion (positva o negativa) es mayor a 20 (Pisotón) se resetea
+  if(abs(a.acceleration.x + 0.4) >= 20){
+    reset(); // Si la aceleracion (positva o negativa) es mayor a 40 (Pisotón) se resetea
   }
 
   buffer[bufferIndex] = accelerationY; //Una matriz que guarda los valores de la aceleración recientes.
